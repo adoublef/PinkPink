@@ -12,6 +12,12 @@ import (
 	natsUtil "github.com/hyphengolang/with-jetstream/internal/nats"
 )
 
+var (
+	natsURL  = os.Getenv("NATS_URL")
+	natsJWT  = os.Getenv("NATS_USER_JWT")
+	natsNKey = os.Getenv("NATS_NKEY")
+)
+
 func init() {
 	log.SetPrefix("consumer: ")
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
@@ -32,7 +38,7 @@ func main() {
 }
 
 func run(ctx context.Context) error {
-	nc, err := natsUtil.NewConn(ctx)
+	nc, err := natsUtil.NewConn(ctx, natsURL, natsJWT, natsNKey)
 	if err != nil {
 		return fmt.Errorf("newNATSConnection: %w", err)
 	}
