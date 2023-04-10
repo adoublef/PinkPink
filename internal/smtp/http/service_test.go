@@ -35,19 +35,15 @@ func TestService(t *testing.T) {
 	consumer, err := smtpNATS.NewWorker(natsConn, nats.AckExplicitPolicy, 1, "tester", smtpNATS.SubjectSubscribe)
 	require.NoError(t, err, "failed to create nats consumer")
 
-	_ = consumer
-
 	t.Cleanup(func() { srv.Close() })
 
 	// make a post request to the service at /subscribe
 	body := `
 	{
+		"email":"kristopherab@gmail.com", 
 		"subject":"Test",
 		"message":"Hello World",
-		"recipient": [{
-			"email":"kristopherab@gmail.com", 
-			"firstname":"Kristopher"
-		}]
+		"firstName":"Kristopher"
 	}`
 
 	resp, err := srv.Client().Post(srv.URL+"/subscribe", "application/json", strings.NewReader(body))
@@ -59,6 +55,33 @@ func TestService(t *testing.T) {
 	require.NoError(t, err, "failed to get next message")
 
 	require.Equal(t, "Test", email.Subject, "email subject does not match")
+
+	// email error
+	body = `
+	{
+		"email":"test#gmail.com", 
+		"subject":"Test",
+		"message":"Hello World",
+		"firstName":"Kristopher"
+	}`
+
+	resp, err = srv.Client().Post(srv.URL+"/subscribe", "application/json", strings.NewReader(body))
+	require.NoError(t, err, "failed to make post request")
+
+	require.Equal(t, 400, resp.StatusCode, "response status code does not match")
+	
+	// firstname error
+	body = `
+	{
+		"email":"test#gmail.com", 
+		"subject":"Test",
+		"message":"Hello World"
+	}`
+	
+	resp, err = srv.Client().Post(srv.URL+"/subscribe", "application/json", strings.NewReader(body))
+	require.NoError(t, err, "failed to make post request")
+	
+	require.Equal(t, 400, resp.StatusCode, "response status code does not match")
 }
 
 func newTestServer(t *testing.T, p smtpNATS.Producer) *httptest.Server {

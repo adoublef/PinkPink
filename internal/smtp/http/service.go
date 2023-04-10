@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/hyphengolang/with-jetstream/internal/openapi"
 	"github.com/hyphengolang/with-jetstream/internal/smtp"
 	smtpNATS "github.com/hyphengolang/with-jetstream/internal/smtp/nats"
 )
@@ -30,17 +31,59 @@ func New(p smtpNATS.Producer) *Service {
 }
 
 func (s *Service) routes() {
-	s.mux.HandleFunc("/subscribe", s.handleCount(0))
+	s.mux.Handle("/", openapi.FileServer("/"))
+	s.mux.HandleFunc("/subscribe", s.handleSubscribe())
 }
 
-func (s *Service) handleCount(count int) http.HandlerFunc {
+func (s *Service) handleSubscribe() http.HandlerFunc {
+	type request struct {
+		Email     smtp.Address `json:"email"`
+		Subject   string       `json:"subject"`
+		Message   string       `json:"message"`
+		FirstName string       `json:"firstName"`
+		LastName  string       `json:"lastName"`
+	}
+
 	type response struct {
 		Message string `json:"message"`
 	}
 
+	parseEmail := func(w http.ResponseWriter, r *http.Request) (*smtp.Email, error) {
+		var req request
+		if err := s.decode(w, r, &req); err != nil {
+			return nil, err
+		}
+
+		// subject must be between 1 to 50 characters
+		if len(req.Subject) < 1 || len(req.Subject) > 50 {
+			return nil, fmt.Errorf("subject must be between 1 to 50 characters")
+		}
+
+		// message must be between 1 to 255 characters
+		if len(req.Message) < 1 || len(req.Message) > 255 {
+			return nil, fmt.Errorf("message must be between 1 to 255 characters")
+		}
+
+		// firstname must be between 1 to 50 characters
+		if len(req.FirstName) < 1 || len(req.FirstName) > 50 {
+			return nil, fmt.Errorf("firstName must be between 1 to 50 characters")
+		}
+
+		// lastName must be between 1 to 50 characters if provided
+		if len(req.LastName) > 0 && (len(req.LastName) < 1 || len(req.LastName) > 50) {
+			return nil, fmt.Errorf("lastName must be between 1 to 50 characters if provided")
+		}
+
+		return &smtp.Email{
+			Subject:    req.Subject,
+			Message:    req.Message,
+			Recipients: []smtp.Recipient{{Address: req.Email, FirstName: req.FirstName, LastName: req.LastName}},
+		}, nil
+	}
+
 	return func(w http.ResponseWriter, r *http.Request) {
-		var e smtp.Email
-		if err := s.decode(w, r, &e); err != nil {
+		e, err := parseEmail(w, r)
+		if err != nil {
 			s.error(w, r, err, http.StatusBadRequest)
 			return
 		}
