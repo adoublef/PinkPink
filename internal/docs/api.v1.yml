@@ -1,0 +1,52 @@
+openapi: 3.0.0
+info:
+  title: Subscription API
+  version: 0.0.0
+paths:
+  /subscribe:
+    post:
+      summary: Subscribe to newsletter
+      description: Subscribes an email address to the newsletter
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/email"
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+components:
+  schemas:
+    email: 
+      type: object
+      properties:
+        subject:
+          type: string
+          description: The subject of the message
+          example: "Weekly newsletter"
+        message:
+          type: string
+          description: The message content
+          example: "Welcome to our newsletter!"
+        recipients:
+          type: array
+          items:
+            $ref: "#/components/schemas/recipient"
+    recipient:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: The email address to subscribe
+          example: jane@example.com
+        firstName:
+          type: string
+          format: firstName
+          description: The first name of the subscriber
+          example: Jane
