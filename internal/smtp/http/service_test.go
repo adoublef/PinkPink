@@ -46,7 +46,7 @@ func TestService(t *testing.T) {
 		"firstName":"Kristopher"
 	}`
 
-	resp, err := srv.Client().Post(srv.URL+"/subscribe", "application/json", strings.NewReader(body))
+	resp, err := srv.Client().Post(srv.URL+"/api/subscribe", "application/json", strings.NewReader(body))
 	require.NoError(t, err, "failed to make post request")
 
 	require.Equal(t, 200, resp.StatusCode, "response status code does not match")
@@ -65,7 +65,7 @@ func TestService(t *testing.T) {
 		"firstName":"Kristopher"
 	}`
 
-	resp, err = srv.Client().Post(srv.URL+"/subscribe", "application/json", strings.NewReader(body))
+	resp, err = srv.Client().Post(srv.URL+"/api/subscribe", "application/json", strings.NewReader(body))
 	require.NoError(t, err, "failed to make post request")
 
 	require.Equal(t, 400, resp.StatusCode, "response status code does not match")
@@ -78,7 +78,7 @@ func TestService(t *testing.T) {
 		"message":"Hello World"
 	}`
 	
-	resp, err = srv.Client().Post(srv.URL+"/subscribe", "application/json", strings.NewReader(body))
+	resp, err = srv.Client().Post(srv.URL+"/api/subscribe", "application/json", strings.NewReader(body))
 	require.NoError(t, err, "failed to make post request")
 	
 	require.Equal(t, 400, resp.StatusCode, "response status code does not match")

@@ -31,8 +31,10 @@ func New(p smtpNATS.Producer) *Service {
 }
 
 func (s *Service) routes() {
-	s.mux.Handle("/", openapi.FileServer("/"))
-	s.mux.HandleFunc("/subscribe", s.handleSubscribe())
+	// s.mux.Handle("/", svelte.FileServer("/")) // serve the svelte app
+
+	s.mux.Handle("/api", openapi.FileServer("/"))
+	s.mux.HandleFunc("/api/subscribe", s.handleSubscribe())
 }
 
 func (s *Service) handleSubscribe() http.HandlerFunc {

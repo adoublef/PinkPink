@@ -1,7 +1,6 @@
 package nats
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
@@ -58,9 +57,10 @@ type Stream struct {
 	nc nats.JetStreamContext
 }
 
-// publish event to stream
+// publish event to stream.
+// important to note that the data will need to be a pointer
 func (s *Stream) Publish(subject Subject, data any) error {
-	p, err := json.Marshal(data)
+	p, err := marshal(data)
 	if err != nil {
 		return fmt.Errorf("json.Marshal: %w", err)
 	}
