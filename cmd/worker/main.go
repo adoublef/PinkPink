@@ -4,31 +4,23 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
-	formatHTTP "github.com/hyphengolang/with-jetstream/internal/format/http"
-	js "github.com/hyphengolang/with-jetstream/internal/format/nats"
 	natsUtil "github.com/hyphengolang/with-jetstream/internal/nats"
+	smtpNATS "github.com/hyphengolang/with-jetstream/internal/smtp/nats"
 )
 
 var (
 	natsURL  = os.Getenv("NATS_URL")
 	natsJWT  = os.Getenv("NATS_USER_JWT")
 	natsNKey = os.Getenv("NATS_NKEY")
-
-	port = os.Getenv("PORT")
 )
 
 func init() {
-	log.SetPrefix("producer: ")
+	log.SetPrefix("consumer: ")
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-
-	if port == "" {
-		port = "8080"
-	}
 }
 
 func main() {
@@ -52,27 +44,23 @@ func run(ctx context.Context) error {
 	}
 	defer nc.Close()
 
-	p, err := js.NewProducer(nc, 2, 1024)
+	w, err := smtpNATS.NewWorker(nc, 2, 1, "worker", smtpNATS.SubjectSubscribe) // quantity of workers
 	if err != nil {
-		return fmt.Errorf("js.NewProducer: %w", err)
+		return fmt.Errorf("js.NewWorker: %w", err)
 	}
 
-	formatHTTP := formatHTTP.New(p)
-
-	srv := &http.Server{Addr: ":" + port, Handler: formatHTTP}
-
 	e := make(chan error, 1)
-	go func() { log.Printf("listening to :%s...", port); e <- srv.ListenAndServe() }()
+	go func() { log.Printf("consumer running..."); e <- w.Listen(ctx) }()
 
 	select {
 	case err := <-e:
-		return fmt.Errorf("srv.ListenAndServe: %w", err)
+		return err
 	case <-ctx.Done(): // graceful shutdown
-		if err := srv.Shutdown(ctx); err != nil {
-			return fmt.Errorf("srv.Shutdown: %w", err)
-		}
-
 		log.Printf("shutting down...")
+		if err := w.Close(); err != nil {
+			return fmt.Errorf("w.Close: %w", err)
+		}
 		return nil
 	}
+
 }
