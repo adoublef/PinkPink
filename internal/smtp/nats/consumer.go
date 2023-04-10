@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 
 	"github.com/hyphengolang/with-jetstream/internal/smtp"
 	"github.com/nats-io/nats.go"
@@ -44,11 +43,18 @@ func (w *Worker) NextMsg(ctx context.Context) (*smtp.Email, error) {
 	}
 
 	var email smtp.Email
-	if err := json.Unmarshal(msg.Data, &email); err != nil {
+	if err := unmarshal(msg, &email); err != nil {
 		return nil, fmt.Errorf("email.UnmarshalJSON: %w", err)
 	}
 
-	return &email, msg.Ack()
+	// do something with the email
+
+	// ack the message
+	if err := msg.Ack(); err != nil {
+		return nil, fmt.Errorf("msg.Ack: %w", err)
+	}
+
+	return &email, nil
 }
 
 // Actual handler I care for
@@ -59,7 +65,12 @@ func (w *Worker) Listen(ctx context.Context) error {
 			return fmt.Errorf("sub.NextMsgWithContext: %w", err)
 		}
 
-		log.Printf("received message: %s", string(msg.Data))
+		var email smtp.Email
+		if err := unmarshal(msg, &email); err != nil {
+			return fmt.Errorf("email.UnmarshalJSON: %w", err)
+		}
+
+		// do something with the email
 
 		// ack the message
 		if err := msg.Ack(); err != nil {
@@ -96,4 +107,23 @@ func newWorker(js nats.JetStreamContext, ack nats.AckPolicy, pending int, consum
 	}
 
 	return js.QueueSubscribeSync(subject, consumer, nats.Bind(streamName, consumer))
+}
+
+// unmarshal is a helper function to unmarshal the data
+func unmarshal(msg *nats.Msg, v any) error {
+	if err := json.Unmarshal(msg.Data, &v); err != nil {
+		return fmt.Errorf("email.UnmarshalJSON: %w", err)
+	}
+
+	return nil
+}
+
+// marshal is a helper function to marshal the data
+func marshal(v any) ([]byte, error) {
+	p, err := json.Marshal(v)
+	if err != nil {
+		return nil, fmt.Errorf("json.Marshal: %w", err)
+	}
+
+	return p, nil
 }

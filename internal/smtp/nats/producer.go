@@ -11,6 +11,11 @@ import (
 // debug is used for testing
 var debug bool
 
+// loc is the region location of server (e.g. us-west-2)
+// 
+// This will be found using the "FLY_REGION" environment variable
+// var loc string 
+
 func init() {
 	if env := os.Getenv("DEBUG"); env != "" {
 		debug = true
@@ -46,6 +51,8 @@ type Producer interface {
 	// will marshal the data to json
 	Publish(subject Subject, data any) error
 }
+
+var _ Producer = (*Stream)(nil)
 
 type Stream struct {
 	nc nats.JetStreamContext
