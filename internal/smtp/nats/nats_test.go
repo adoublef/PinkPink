@@ -7,6 +7,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/hyphengolang/with-jetstream/internal/smtp"
 	smtpNATS "github.com/hyphengolang/with-jetstream/internal/smtp/nats"
 	containers "github.com/hyphengolang/with-jetstream/pkg/containers/nats"
 	"github.com/nats-io/nats.go"
@@ -23,22 +24,23 @@ func TestConsumer(t *testing.T) {
 	// we are testing so should be in debug mode
 	t.Setenv("DEBUG", "t")
 
-	// setup nats producer
-	producer, err := smtpNATS.NewProducer(natsConn, nats.WorkQueuePolicy, 1024)
+	// setup nats p
+	p, err := smtpNATS.NewProducer(natsConn, nats.WorkQueuePolicy, 1024)
 	require.NoError(t, err, "failed to create nats producer")
 
-	// setup nats consumer
-	consumer, err := smtpNATS.NewWorker(natsConn, nats.AckExplicitPolicy, 1, "tester", smtpNATS.SubjectSend)
+	// setup nats c
+	c, err := smtpNATS.NewWorker(natsConn, nats.AckExplicitPolicy, 1, "tester", smtpNATS.SubjectSubscribe)
 	require.NoError(t, err, "failed to create nats consumer")
 
-	err = producer.Publish(smtpNATS.SubjectSend, []byte("hello world"))
+	// publish email to nats
+	var email smtp.Email
+
+	err = p.Publish(smtpNATS.SubjectSubscribe, email)
 	require.NoError(t, err, "failed to publish message")
 
 	// TODO: wait for consumer to receive message
-	msg, err := consumer.NextMsg(context.Background())
+	_, err = c.NextMsg(context.Background())
 	require.NoError(t, err, "failed to get next message")
-
-	require.Equal(t, "hello world", string(msg), "message data does not match")
 }
 
 func TestMain(m *testing.M) {

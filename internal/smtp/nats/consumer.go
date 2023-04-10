@@ -2,11 +2,21 @@ package nats
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 
+	"github.com/hyphengolang/with-jetstream/internal/smtp"
 	"github.com/nats-io/nats.go"
 )
+
+type Consumer interface {
+	NextMsg(ctx context.Context) (*smtp.Email, error)
+	Listen(ctx context.Context) error
+	Close() error
+}
+
+var _ Consumer = (*Worker)(nil)
 
 type Worker struct {
 	sub *nats.Subscription
@@ -26,20 +36,19 @@ func NewWorker(nc *nats.Conn, ack nats.AckPolicy, maxPending int, consumer strin
 	return &Worker{sub}, nil
 }
 
-func (w *Worker) Close() error {
-	if err := w.sub.Unsubscribe(); err != nil {
-		return fmt.Errorf("sub.Unsubscribe: %w", err)
-	}
-	return nil
-}
-
-func (w *Worker) NextMsg(ctx context.Context) (string, error) {
+// I don't really need to know this info I don't think
+func (w *Worker) NextMsg(ctx context.Context) (*smtp.Email, error) {
 	msg, err := w.sub.NextMsgWithContext(ctx)
 	if err != nil {
-		return "", fmt.Errorf("sub.NextMsgWithContext: %w", err)
+		return nil, fmt.Errorf("sub.NextMsgWithContext: %w", err)
 	}
 
-	return string(msg.Data), msg.Ack()
+	var email smtp.Email
+	if err := json.Unmarshal(msg.Data, &email); err != nil {
+		return nil, fmt.Errorf("email.UnmarshalJSON: %w", err)
+	}
+
+	return &email, msg.Ack()
 }
 
 // Actual handler I care for
@@ -57,6 +66,13 @@ func (w *Worker) Listen(ctx context.Context) error {
 			return fmt.Errorf("msg.Ack: %w", err)
 		}
 	}
+}
+
+func (w *Worker) Close() error {
+	if err := w.sub.Unsubscribe(); err != nil {
+		return fmt.Errorf("sub.Unsubscribe: %w", err)
+	}
+	return nil
 }
 
 func newWorker(js nats.JetStreamContext, ack nats.AckPolicy, pending int, consumer, subject string) (*nats.Subscription, error) {

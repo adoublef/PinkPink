@@ -1,6 +1,7 @@
 package nats
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -11,17 +12,17 @@ import (
 var debug bool
 
 func init() {
-	if  os.Getenv("DEBUG") == "t" {
+	if env := os.Getenv("DEBUG"); env != "" {
 		debug = true
 	}
 }
 
 const (
-	streamName = "FORMAT"
+	streamName = "SMTP"
 )
 
 var (
-	streamSubjects = []string{"*.smtp.send"}
+	streamSubjects = []string{"*.smtp.subscribe"}
 )
 
 type Subject string
@@ -30,37 +31,50 @@ func (s Subject) String() string {
 	if debug {
 		return "debug.smtp." + string(s)
 	}
-	
+
 	return "internal.smtp." + string(s)
 }
 
 // subjects
 const (
-	SubjectAll Subject = ">"
-	SubjectSend Subject = "send"
+	SubjectAll       Subject = ">"
+	SubjectSubscribe Subject = "subscribe"
 )
 
-type Producer struct {
+type Producer interface {
+	// will update so that the publisher 
+	// will marshal the data to json
+	Publish(subject Subject, data any) error
+}
+
+type Stream struct {
 	nc nats.JetStreamContext
 }
 
 // publish event to stream
-func (p *Producer) Publish(subject Subject, data []byte) error {
-	if _, err := p.nc.Publish(subject.String(), data); err != nil {
+func (s *Stream) Publish(subject Subject, data any) error {
+	p, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("json.Marshal: %w", err)
+	}
+
+	if _, err := s.nc.Publish(subject.String(), p); err != nil {
 		return fmt.Errorf("nc.Publish: %w", err)
 	}
 	return nil
 }
 
-func NewProducer(nc *nats.Conn, retention nats.RetentionPolicy, maxBytes int64) (*Producer, error) {
+func NewProducer(nc *nats.Conn, retention nats.RetentionPolicy, maxBytes int64) (*Stream, error) {
 	js, err := nc.JetStream()
 	if err != nil {
 		return nil, fmt.Errorf("nc.JetStream: %w", err)
 	}
 
+	// TODO: update stream with new subjects if they change
+
 	// check if stream already exists
 	if _, err = js.StreamInfo(streamName); err == nil {
-		return &Producer{js}, nil
+		return &Stream{js}, nil
 	}
 
 	if _, err = js.AddStream(&nats.StreamConfig{
@@ -72,5 +86,5 @@ func NewProducer(nc *nats.Conn, retention nats.RetentionPolicy, maxBytes int64) 
 		return nil, fmt.Errorf("addStream: %w", err)
 	}
 
-	return &Producer{js}, nil
+	return &Stream{js}, nil
 }
