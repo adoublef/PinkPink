@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/adoublef/pinkpink/internal/smtp"
 	"github.com/hyphengolang/prelude/testing/is"
-	"github.com/hyphengolang/with-jetstream/pkg/smtp"
 )
 
 var smtpUrl = os.Getenv("SMTP_URL")

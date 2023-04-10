@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/hyphengolang/with-jetstream/internal/smtp"
+	"github.com/adoublef/pinkpink/internal/smtp"
 	"github.com/nats-io/nats.go"
 )
 

@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	smtpHTTP "github.com/hyphengolang/with-jetstream/internal/smtp/http"
-	smtpNATS "github.com/hyphengolang/with-jetstream/internal/smtp/nats"
-	containers "github.com/hyphengolang/with-jetstream/pkg/containers/nats"
+	smtpHTTP "github.com/adoublef/pinkpink/internal/smtp/http"
+	smtpNATS "github.com/adoublef/pinkpink/internal/smtp/nats"
+	containers "github.com/adoublef/pinkpink/pkg/containers/nats"
 	"github.com/nats-io/nats.go"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go/wait"

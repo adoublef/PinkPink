@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/hyphengolang/with-jetstream/pkg/containers/nats"
+	"github.com/adoublef/pinkpink/pkg/containers/nats"
 	gonats "github.com/nats-io/nats.go"
 	"github.com/testcontainers/testcontainers-go/wait"
 )

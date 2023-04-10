@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/hyphengolang/with-jetstream/internal/openapi"
-	"github.com/hyphengolang/with-jetstream/internal/smtp"
-	smtpNATS "github.com/hyphengolang/with-jetstream/internal/smtp/nats"
+	"github.com/adoublef/pinkpink/internal/openapi"
+	"github.com/adoublef/pinkpink/internal/smtp"
+	smtpNATS "github.com/adoublef/pinkpink/internal/smtp/nats"
 )
 
 type Service struct {

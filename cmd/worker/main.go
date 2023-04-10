@@ -8,8 +8,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	natsUtil "github.com/hyphengolang/with-jetstream/internal/nats"
-	smtpNATS "github.com/hyphengolang/with-jetstream/internal/smtp/nats"
+	natsUtil "github.com/adoublef/pinkpink/internal/nats"
+	smtpNATS "github.com/adoublef/pinkpink/internal/smtp/nats"
 )
 
 var (

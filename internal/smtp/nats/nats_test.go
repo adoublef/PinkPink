@@ -7,9 +7,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/hyphengolang/with-jetstream/internal/smtp"
-	smtpNATS "github.com/hyphengolang/with-jetstream/internal/smtp/nats"
-	containers "github.com/hyphengolang/with-jetstream/pkg/containers/nats"
+	"github.com/adoublef/pinkpink/internal/smtp"
+	smtpNATS "github.com/adoublef/pinkpink/internal/smtp/nats"
+	containers "github.com/adoublef/pinkpink/pkg/containers/nats"
 	"github.com/nats-io/nats.go"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go/wait"
